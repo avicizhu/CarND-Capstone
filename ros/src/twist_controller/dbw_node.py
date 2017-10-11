@@ -87,7 +87,7 @@ class DBWNode(object):
         self.dbw_enabled = msg.data
 
     def loop(self):
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(20)
         while not rospy.is_shutdown():
             # Get current time
             now = rospy.get_rostime()

@@ -79,7 +79,7 @@ class WaypointUpdater(object):
         
         self.waypoints.waypoints[first_wpt_index].pose.header.frame_id = self.waypoints.header.frame_id
         try:
-            self.tf_listener.waitForTransform("base_link", "world", rospy.Time(0), rospy.Duration(0.02))
+            self.tf_listener.waitForTransform("base_link", "world", rospy.Time(0), rospy.Duration(0.05))
             transformed_waypoint = self.tf_listener.transformPose("base_link", self.waypoints.waypoints[first_wpt_index].pose)
         except (tf.Exception, tf.LookupException, tf.ConnectivityException):
             return
@@ -88,7 +88,7 @@ class WaypointUpdater(object):
             first_wpt_index += 1
             first_wpt_index %= num_waypoints_in_list
         
-        planned_velocity = 4.0
+        planned_velocity = 3.0
         
         for num_wp in range(LOOKAHEAD_WPS):
                 wp = Waypoint()

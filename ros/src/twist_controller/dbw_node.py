@@ -45,6 +45,7 @@ class DBWNode(object):
         steer_ratio = rospy.get_param('~steer_ratio', 14.8)
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
+        #max_throttle_percent = rospy.get_param('~max_throttle_percent')
 
         self.steer_pub = rospy.Publisher('/vehicle/steering_cmd',
                                          SteeringCmd, queue_size=1)
@@ -58,15 +59,13 @@ class DBWNode(object):
                                      wheel_radius, wheel_base,
                                      steer_ratio, max_lat_accel,
                                      max_steer_angle, brake_deadband,
-                                     fuel_capacity, max_throttle_percent)
+                                     fuel_capacity, accel_limit)
         self.velocity = None
         self.twist = None
         self.dbw_enabled = False
 
         self.prev_dbw_enabled = False
         self.last_time = None
-
-        self.last_action = ''
 
         # TODO: Subscribe to all the topics you need to
         rospy.Subscriber('/current_velocity', TwistStamped,
@@ -88,23 +87,22 @@ class DBWNode(object):
         self.dbw_enabled = msg.data
 
     def loop(self):
-        rate = rospy.Rate(50)
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             # Get current time
             now = rospy.get_rostime()
 
             # Publish only if DBW is enabled
             if self.twist is not None and \
-               self.velocity is not None and \
-               self.last_time is not None and self.dbw_enabled:
+                self.velocity is not None and \
+                self.last_time is not None and self.dbw_enabled:
 
-               if self.dbw_enabled != self.prev_dbw_enabled:
-                   self.controller.reset()
+                if self.dbw_enabled != self.prev_dbw_enabled:
+                    self.controller.reset()
 
                 # get control commands
                 diff = now - self.last_time
-                throttle, brake, steer = self.controller.control(
-                    self.twist, self.velocity, diff.to_sec())
+                throttle, brake, steer = self.controller.control(self.twist, self.velocity, diff.to_sec())
 
                 # Publish
                 self.publish(throttle, brake, steer)

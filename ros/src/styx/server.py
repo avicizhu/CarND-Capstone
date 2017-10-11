@@ -13,7 +13,7 @@ sio = socketio.Server()
 app = Flask(__name__)
 msgs = []
 
-dbw_enable = False
+dbw_enable = True
 
 @sio.on('connect')
 def connect(sid, environ):

@@ -39,24 +39,22 @@ class WaypointUpdater(object):
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
-        # TODO: Add other member variables you need below
-	self.tf_listener = tf.TransformListener()
+        self.tf_listener = tf.TransformListener()
 
-        # The car's current position
         self.pose = None
 
-        # The maps's complete waypoints
         self.waypoints = None
 
-        rospy.spin()
+        rate = rospy.Rate(10)
 
-    def pose_cb(self, msg):
-        # TODO: Implement
-        self.pose = msg
+        while not rospy.is_shutdown():
+            self.publish()
+            rate.sleep()
 
+    def publish(self):
         if self.waypoints is None:
             return
-        
+
         num_waypoints_in_list = len(self.waypoints.waypoints)
 
         # Gererate an empty lane to store the final_waypoints
@@ -70,13 +68,13 @@ class WaypointUpdater(object):
         #start_time = time.time()
         first_wpt_index = -1
         min_wpt_distance = float('inf')
-        
+
         for index, waypoint in enumerate(self.waypoints.waypoints):
             current_wpt_distance = self.distance(self.pose.pose.position, waypoint.pose.pose.position)
             if current_wpt_distance > 0 and current_wpt_distance < min_wpt_distance:
                 min_wpt_distance = current_wpt_distance
                 first_wpt_index = index
-        
+
         self.waypoints.waypoints[first_wpt_index].pose.header.frame_id = self.waypoints.header.frame_id
         try:
             self.tf_listener.waitForTransform("base_link", "world", rospy.Time(0), rospy.Duration(0.05))
@@ -84,13 +82,13 @@ class WaypointUpdater(object):
         except (tf.Exception, tf.LookupException, tf.ConnectivityException):
 	    rospy.logwarn("fail %s", time.time())
             return
-        
+
         if transformed_waypoint.pose.position.x <= 0.0:
             first_wpt_index += 1
             first_wpt_index %= num_waypoints_in_list
-        
+
         planned_velocity = 10.0
-        
+
         for num_wp in range(LOOKAHEAD_WPS):
                 wp = Waypoint()
                 wp.pose = self.waypoints.waypoints[(first_wpt_index + num_wp) % num_waypoints_in_list].pose
@@ -99,7 +97,7 @@ class WaypointUpdater(object):
                 wp.twist.twist.linear.x = planned_velocity
                 wp.twist.twist.linear.y = 0.0
                 wp.twist.twist.linear.z = 0.0
-                
+
                 wp.twist.twist.angular.x = 0.0
                 wp.twist.twist.angular.y = 0.0
                 wp.twist.twist.angular.z = 0.0
@@ -108,8 +106,10 @@ class WaypointUpdater(object):
         # finally, publish waypoints as modified on /final_waypoints topic
         self.final_waypoints_pub.publish(lane)
 
+    def pose_cb(self, msg):
+        # TODO: Implement
+        self.pose = msg
 
-        pass
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement

@@ -42,7 +42,7 @@ class DBWNode(object):
         accel_limit = rospy.get_param('~accel_limit', 1.)
         wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
         wheel_base = rospy.get_param('~wheel_base', 2.8498)
-        steer_ratio = rospy.get_param('~steer_ratio', 14.8)
+        steer_ratio = rospy.get_param('~steer_ratio', 8*14.8)
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
         #max_throttle_percent = rospy.get_param('~max_throttle_percent')
@@ -87,7 +87,7 @@ class DBWNode(object):
         self.dbw_enabled = msg.data
 
     def loop(self):
-        rate = rospy.Rate(20)
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             # Get current time
             now = rospy.get_rostime()
@@ -119,7 +119,8 @@ class DBWNode(object):
         tcmd.enable = True
         tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
         tcmd.pedal_cmd = throttle
-        self.throttle_pub.publish(tcmd)
+        if brake == 0 and throttle > 0:
+            self.throttle_pub.publish(tcmd)
 
         scmd = SteeringCmd()
         scmd.enable = True
@@ -130,7 +131,8 @@ class DBWNode(object):
         bcmd.enable = True
         bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
         bcmd.pedal_cmd = brake
-        self.brake_pub.publish(bcmd)
+        if brake > 0:
+            self.brake_pub.publish(bcmd)
 
 
 if __name__ == '__main__':

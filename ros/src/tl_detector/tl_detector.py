@@ -33,6 +33,8 @@ class TLDetector(object):
         simulator. When testing on the vehicle, the color state will not be available. You'll need to
         rely on the position of the light and the camera image to predict it.
         '''
+	config_string = rospy.get_param("/traffic_light_config")
+	self.config = yaml.load(config_string)
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
 
         image_width = self.config['camera_info']['image_width']
@@ -80,13 +82,13 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
-        harvest_image(self.camera_image)
+        #self.harvest_image(self.camera_image)
 
-     def harvest_image(self, image):
-        cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
-        cv2.imwrite("./tl_images/image{}.jpg".format(
-            self.debug_image_count), cv_image)
-        self.debug_image_count += 1
+    #def harvest_image(self, image):
+    #    cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
+    #    cv2.imwrite("./tl_images/image{}.jpg".format(
+    #        self.debug_image_count), cv_image)
+    #    self.debug_image_count += 1
 
     def loop(self):
         rate = rospy.Rate(5)
@@ -180,7 +182,7 @@ class TLDetector(object):
             now = rospy.Time.now()
             self.listener.waitForTransform("base_link","world", now, rospy.Duration(0.1))
         except (tf.Exception, tf.LookupException, tf.ConnectivityException):
-            rospy.logwarn("fail to convert in tl_detector")
+            #rospy.logwarn("fail to convert in tl_detector")
             return -1, TrafficLight.UNKNOWN
 
         wtl=PointStamped()
@@ -209,7 +211,7 @@ class TLDetector(object):
 #        rospy.loginfo('stop line distance: %s pose %s', min_distance,(pose.pose.position.x,pose.pose.position.y))
 
         if min_distance < 50 and min_distance >=0:
-            rospy.logwarn("getting close to a light")
+            #rospy.logwarn("getting close to a light")
             light_wp = self.get_closest_waypoint(light)
             state = self.get_light_state(light)
             return light_wp, state

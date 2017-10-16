@@ -72,7 +72,7 @@ class TLClassifier(object):
 
             return output
 
-    def graph_class_to_traffic_light(graph_class):
+    def graph_class_to_traffic_light(self, graph_class):
         """ Converts from a class number as defined in the TensorFlow
             model, to a class number as defined in styx_msgs/TrafficLight
         """
@@ -85,7 +85,7 @@ class TLClassifier(object):
 
         return TrafficLight.UNKNOWN
 
-    def traffic_light_to_str(traffic_light):
+    def traffic_light_to_str(self, traffic_light):
         if traffic_light == TrafficLight.GREEN:
             return 'GREEN'
         elif traffic_light == TrafficLight.YELLOW:

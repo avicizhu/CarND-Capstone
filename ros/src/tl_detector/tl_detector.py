@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import Int32
-from geometry_msgs.msg import PoseStamped, Pose
+from geometry_msgs.msg import PoseStamped, Pose, PointStamped
 from styx_msgs.msg import TrafficLightArray, TrafficLight
 from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
@@ -10,6 +10,7 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+import math
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -73,7 +74,7 @@ class TLDetector(object):
         self.camera_image = msg
 
     def loop(self):
-        rate = rospy.Rate(10) # 10Hz
+        rate = rospy.Rate(5)
         while not rospy.is_shutdown():
 
             light_wp, state = self.process_traffic_lights()
@@ -114,7 +115,7 @@ class TLDetector(object):
         closest_waypoint_ind = -1
 
         for index, waypoint in enumerate(self.waypoints.waypoints):
-            current_wpt_distance = self.distance(self.waypoints.waypoints[i].pose.pose.position,pose.position)
+            current_wpt_distance = self.distance(self.waypoints.waypoints[index].pose.pose.position,pose.pose.position)
             if current_wpt_distance < min_wpt_distance:
                 min_wpt_distance = current_wpt_distance
                 closest_waypoint_ind = index
@@ -153,7 +154,7 @@ class TLDetector(object):
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
-        if(self.current_pose is None):
+        if(self.pose is None or self.waypoints is None):
             return -1, None
 
         min_distance = float("inf")
@@ -162,10 +163,10 @@ class TLDetector(object):
         #transform fast avoiding wait cycles
         try:
             now = rospy.Time.now()
-            self.listener.waitForTransform("base_link","world", now, rospy.Duration(0.05))
+            self.listener.waitForTransform("base_link","world", now, rospy.Duration(0.1))
         except (tf.Exception, tf.LookupException, tf.ConnectivityException):
             rospy.logwarn("fail to convert in tl_detector")
-            return -1, None
+            return -1, TrafficLight.UNKNOWN
 
         wtl=PointStamped()
         wtl.header.frame_id = "/world"
@@ -194,11 +195,11 @@ class TLDetector(object):
 
         if min_distance < 50 and min_distance >=0:
             rospy.logwarn("getting close to a light")
-            light_wp = get_closest_waypoint(light)
+            light_wp = self.get_closest_waypoint(light)
             state = self.get_light_state(light)
             return light_wp, state
         else:
-            self.waypoints = None
+            #self.waypoints = None
             return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':

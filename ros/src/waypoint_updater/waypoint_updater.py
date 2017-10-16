@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Int32
 
@@ -43,6 +43,8 @@ class WaypointUpdater(object):
         self.tf_listener = tf.TransformListener()
 
         self.pose = None
+
+        self.light_waypoint_index = -1
 
         self.waypoints = None
 
@@ -89,12 +91,6 @@ class WaypointUpdater(object):
             first_wpt_index %= num_waypoints_in_list
 
         planned_velocity = 4.4
-        if self.light_waypoint_index >= 0:
-                self.waypoints.waypoints[self.light_waypoint_index].pose.header.frame_id = self.waypoints.header.frame_id
-                transformed_light_point = self.tf_listener.transformPose("base_link", self.waypoints.waypoints[self.light_waypoint_index].pose)
-                distance_to_stop_line = transformed_light_point.pose.position.x
-                rospy.logwarn("carwp: %d, tl_wp: %d", first_wpt_index, self.light_waypoint_index)
-                rospy.logwarn("distance to stop line: %d", distance_to_stop_line)
 
         for num_wp in range(LOOKAHEAD_WPS):
                 wp = Waypoint()
@@ -102,7 +98,10 @@ class WaypointUpdater(object):
                 wp.twist = self.waypoints.waypoints[(first_wpt_index + num_wp) % num_waypoints_in_list].twist
 
                 if self.light_waypoint_index > -1:
-                    planned_velocity
+                    planned_velocity -= 0.1
+		    if planned_velocity < 0.1:
+			planned_velocity = 0
+
                 wp.twist.twist.linear.x = planned_velocity
                 wp.twist.twist.linear.y = 0.0
                 wp.twist.twist.linear.z = 0.0

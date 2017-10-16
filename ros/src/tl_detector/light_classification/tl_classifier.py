@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 from styx_msgs.msg import TrafficLight
 
-MIN_CLASSIFICATION_CONFIDENCE = 0.5
+MIN_CLASSIFICATION_CONFIDENCE = 0.7
 INFERENCE_MODEL_PATH = 'models/frozen_inference_graph_sim.pb'
 
 class TLClassifier(object):

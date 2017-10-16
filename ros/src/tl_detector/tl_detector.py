@@ -34,7 +34,15 @@ class TLDetector(object):
         rely on the position of the light and the camera image to predict it.
         '''
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+
+        image_width = self.config['camera_info']['image_width']
+        image_height = self.config['camera_info']['image_height']
+        image_depth = 3  # RGB
+        buffer_size_img = 2 * (image_width * image_height * image_depth)
+
+        sub6 = rospy.Subscriber('/image_color', Image,
+                                self.image_cb, queue_size=1,
+                                buff_size=buffer_size_img)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -72,6 +80,13 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
+        harvest_image(self.camera_image)
+
+     def harvest_image(self, image):
+        cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
+        cv2.imwrite("./tl_images/image{}.jpg".format(
+            self.debug_image_count), cv_image)
+        self.debug_image_count += 1
 
     def loop(self):
         rate = rospy.Rate(5)
@@ -134,7 +149,7 @@ class TLDetector(object):
         """
         if(not self.has_image):
             self.prev_light_loc = None
-            return False
+            return TrafficLight.UNKNOWN
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 

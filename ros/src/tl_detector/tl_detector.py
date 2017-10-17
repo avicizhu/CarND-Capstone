@@ -37,14 +37,6 @@ class TLDetector(object):
 	self.config = yaml.load(config_string)
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
 
-        image_width = self.config['camera_info']['image_width']
-        image_height = self.config['camera_info']['image_height']
-        image_depth = 3  # RGB
-        buffer_size_img = 2 * (image_width * image_height * image_depth)
-
-        sub6 = rospy.Subscriber('/image_color', Image,
-                                self.image_cb, queue_size=1,
-                                buff_size=buffer_size_img)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -60,6 +52,14 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
 
+        image_width = self.config['camera_info']['image_width']
+        image_height = self.config['camera_info']['image_height']
+        image_depth = 3  # RGB
+        buffer_size_img = 2 * (image_width * image_height * image_depth)
+
+        sub6 = rospy.Subscriber('/image_color', Image,
+                                self.image_cb, queue_size=1,
+                                buff_size=buffer_size_img)
         rospy.spin()
 
     def pose_cb(self, msg):
@@ -195,7 +195,7 @@ class TLDetector(object):
             return -1, TrafficLight.UNKNOWN
 #        rospy.loginfo('stop line distance: %s pose %s', min_distance,(pose.pose.position.x,pose.pose.position.y))
 
-        if min_distance < 50 and min_distance >=0:
+        if min_distance < 30 and min_distance >=0:
             #rospy.logwarn("getting close to a light")
             light_wp = self.get_closest_waypoint(light)
             state = self.get_light_state(light)
